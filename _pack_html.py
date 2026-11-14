@@ -5,17 +5,17 @@ root = Path(__file__).resolve().parent
 html = (root / "index.html").read_text(encoding="utf-8")
 
 files = [
-    ("welcome-screen.mp3", "audio/mpeg"),
-    ("game-soundtrack2.mp3", "audio/mpeg"),
-    ("01_water_splash.wav", "audio/wav"),
-    ("02_ship_hit_explosion.wav", "audio/wav"),
-    ("04_cannon_fire.wav", "audio/wav"),
-    ("cover.png", "image/png"),
-    ("carrier.png", "image/png"),
-    ("battleship.png", "image/png"),
-    ("cruiser.png", "image/png"),
-    ("submarine.png", "image/png"),
-    ("destroyer.png", "image/png"),
+    ("audio/welcome-screen.mp3", "audio/mpeg"),
+    ("audio/game-soundtrack2.mp3", "audio/mpeg"),
+    ("audio/01_water_splash.wav", "audio/wav"),
+    ("audio/02_ship_hit_explosion.wav", "audio/wav"),
+    ("audio/04_cannon_fire.wav", "audio/wav"),
+    ("images/cover.png", "image/png"),
+    ("images/carrier.png", "image/png"),
+    ("images/battleship.png", "image/png"),
+    ("images/cruiser.png", "image/png"),
+    ("images/submarine.png", "image/png"),
+    ("images/destroyer.png", "image/png"),
 ]
 
 parts = []
@@ -34,18 +34,18 @@ html = html.replace(
     1,
 )
 
-html = html.replace(' src="welcome-screen.mp3"', "", 1)
-html = html.replace(' src="cover.png"', "", 1)
+html = html.replace(' src="audio/welcome-screen.mp3"', "", 1)
+html = html.replace(' src="images/cover.png"', "", 1)
 
 old_music = '    const music = document.getElementById("music");\n'
-new_music = old_music + '    music.src = embeddedFiles["welcome-screen.mp3"];\n'
+new_music = old_music + '    music.src = embeddedFiles["audio/welcome-screen.mp3"];\n'
 if html.count(old_music) != 1:
     raise SystemExit("music element count")
 html = html.replace(old_music, new_music, 1)
 
 html = html.replace(
     marker,
-    '    document.querySelector(".welcome-ship").src = embeddedFiles["cover.png"];\n' + marker,
+    '    document.querySelector(".welcome-ship").src = embeddedFiles["images/cover.png"];\n' + marker,
     1,
 )
 
@@ -58,10 +58,10 @@ html = html.replace(old_play, new_play, 1)
 for name, _mime in files:
     html = html.replace('new Audio("' + name + '")', 'new Audio(embeddedFiles["' + name + '"])')
 
-old_picture = 'picture.src = ship.id + ".png";'
+old_picture = 'picture.src = "images/" + ship.id + ".png";'
 if html.count(old_picture) != 2:
     raise SystemExit("picture src count " + str(html.count(old_picture)))
-html = html.replace(old_picture, 'picture.src = embeddedFiles[ship.id + ".png"];')
+html = html.replace(old_picture, 'picture.src = embeddedFiles["images/" + ship.id + ".png"];')
 
 for name, _mime in files:
     if html.count('"' + name + '"') < 1:

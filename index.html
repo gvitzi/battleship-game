@@ -523,7 +523,7 @@
   </style>
 </head>
 <body>
-  <audio id="music" src="welcome-screen.mp3" autoplay muted loop></audio>
+  <audio id="music" src="audio/welcome-screen.mp3" autoplay muted loop></audio>
   <button class="mute-toggle" id="mute-toggle" type="button" aria-label="Mute" aria-pressed="false">
     <svg class="icon-playing" viewBox="0 0 24 24" aria-hidden="true">
       <path fill="currentColor" d="M3 9v6h4l5 4V5L7 9H3z"/>
@@ -536,7 +536,7 @@
     </svg>
   </button>
   <main>
-    <img class="welcome-ship" src="cover.png" alt="Battleship">
+    <img class="welcome-ship" src="images/cover.png" alt="Battleship">
     <p class="kicker">Naval combat</p>
     <div class="rule" aria-hidden="true"></div>
     <p class="tagline">Welcome aboard.</p>
@@ -682,7 +682,7 @@
       }
       const picture = document.createElement("img");
       picture.className = hint ? "ship-picture hint-picture" : "ship-picture";
-      picture.src = ship.id + ".png";
+      picture.src = "images/" + ship.id + ".png";
       picture.alt = "";
       picture.draggable = false;
       const boardRect = board.getBoundingClientRect();
@@ -955,7 +955,7 @@
       const preview = document.createElement("div");
       preview.className = "ship-preview";
       const picture = document.createElement("img");
-      picture.src = ship.id + ".png";
+      picture.src = "images/" + ship.id + ".png";
       picture.alt = "";
       picture.draggable = false;
       preview.append(picture);
@@ -1011,14 +1011,14 @@
       paintGrid();
       document.querySelector("main").classList.add("hidden");
       document.getElementById("board-screen").classList.remove("hidden");
-      playMusicFile("game-soundtrack2.mp3");
+      playMusicFile("audio/game-soundtrack2.mp3");
     });
 
     document.getElementById("back").addEventListener("click", () => {
       clearShotTimer();
       document.getElementById("board-screen").classList.add("hidden");
       document.querySelector("main").classList.remove("hidden");
-      playMusicFile("welcome-screen.mp3");
+      playMusicFile("audio/welcome-screen.mp3");
     });
 
     document.getElementById("result-back").addEventListener("click", () => {
@@ -1028,7 +1028,7 @@
       clearConfetti();
       document.getElementById("game-screen").classList.add("hidden");
       document.querySelector("main").classList.remove("hidden");
-      playMusicFile("welcome-screen.mp3");
+      playMusicFile("audio/welcome-screen.mp3");
     });
 
     function buildGrid(target) {
@@ -1245,9 +1245,9 @@
         started.catch(() => {});
       }
     });
-    const splashAudio = new Audio("01_water_splash.wav");
-    const hitAudio = new Audio("02_ship_hit_explosion.wav");
-    const cannonAudio = new Audio("04_cannon_fire.wav");
+    const splashAudio = new Audio("audio/01_water_splash.wav");
+    const hitAudio = new Audio("audio/02_ship_hit_explosion.wav");
+    const cannonAudio = new Audio("audio/04_cannon_fire.wav");
     let musicRequest = 0;
 
     function applyMute() {
@@ -1481,7 +1481,7 @@
       document.getElementById("game-screen").classList.remove("hidden");
       paintPlayerGrid();
       paintComputerGrid();
-      playMusicFile("game-soundtrack2.mp3");
+      playMusicFile("audio/game-soundtrack2.mp3");
     });
 
     window.addEventListener("resize", () => {
