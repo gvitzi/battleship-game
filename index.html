@@ -485,11 +485,23 @@
       background: #8fd4f2;
     }
 
-    .mute-toggle {
+    .sound-controls {
       position: fixed;
       top: 1rem;
       right: 1rem;
       z-index: 6;
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+
+    .volume {
+      width: 7rem;
+      accent-color: var(--brass);
+      cursor: pointer;
+    }
+
+    .mute-toggle {
       width: 2.75rem;
       height: 2.75rem;
       display: grid;
@@ -528,7 +540,9 @@
 </head>
 <body>
   <audio id="music" src="audio/welcome-screen.mp3" autoplay muted loop></audio>
-  <button class="mute-toggle" id="mute-toggle" type="button" aria-label="Mute" aria-pressed="false">
+  <div class="sound-controls">
+    <input id="volume" class="volume" type="range" min="0" max="1" step="0.05" value="0.5" aria-label="Volume">
+    <button class="mute-toggle" id="mute-toggle" type="button" aria-label="Mute" aria-pressed="false">
     <svg class="icon-playing" viewBox="0 0 24 24" aria-hidden="true">
       <path fill="currentColor" d="M3 9v6h4l5 4V5L7 9H3z"/>
       <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16.5 9.5a3.5 3.5 0 010 5"/>
@@ -539,6 +553,7 @@
       <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16 10l5 5M21 10l-5 5"/>
     </svg>
   </button>
+  </div>
   <main>
     <img class="welcome-ship" src="images/cover.png" alt="Battleship">
     <p class="kicker">Naval combat</p>
@@ -1223,9 +1238,11 @@
 
     const music = document.getElementById("music");
     const muteToggle = document.getElementById("mute-toggle");
+    const volumeControl = document.getElementById("volume");
     let musicMuted = false;
+    let musicVolume = 0.5;
     music.loop = true;
-    music.volume = 1;
+    music.volume = musicVolume;
     music.muted = true;
     music.addEventListener("playing", () => {
       if (!musicMuted) {
@@ -1242,7 +1259,7 @@
       if (musicMuted || !music.paused) {
         return;
       }
-      music.volume = 1;
+      music.volume = musicVolume;
       music.muted = false;
       const started = music.play();
       if (started) {
@@ -1253,6 +1270,15 @@
     const hitAudio = new Audio("audio/02_ship_hit_explosion.wav");
     const cannonAudio = new Audio("audio/04_cannon_fire.wav");
     let musicRequest = 0;
+
+    function applyVolume() {
+      music.volume = musicVolume;
+      splashAudio.volume = musicVolume;
+      hitAudio.volume = musicVolume;
+      cannonAudio.volume = musicVolume;
+    }
+
+    applyVolume();
 
     function applyMute() {
       music.muted = musicMuted;
@@ -1272,7 +1298,7 @@
         if (request !== musicRequest) {
           return;
         }
-        music.volume = 1;
+        music.volume = musicVolume;
         music.muted = musicMuted;
         if (musicMuted) {
           return;
@@ -1315,6 +1341,11 @@
           played.catch(() => {});
         }
       }
+    });
+
+    volumeControl.addEventListener("input", () => {
+      musicVolume = Number(volumeControl.value);
+      applyVolume();
     });
 
 
