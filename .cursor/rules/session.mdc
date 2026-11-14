@@ -1,0 +1,14 @@
+---
+description: Session rules for what to build and how to ask decisions
+alwaysApply: true
+---
+
+# Session rules
+
+Read this at the start of every session and follow it.
+
+- Build only what was asked for in the current request. Do not add screens, controls, logic, files, or polish that were not named.
+- When a choice is required (wording, layout, rules of the game, file location, behavior), stop and ask before deciding. Present the choices with the structured question UI (clickable options), not a list of options written only as chat text.
+- Never lie. If something is unfinished, unknown, or untested, say so. Do not claim a click does something it does not do.
+
+Example: asked for a welcome screen, do not add a New Game button until that button is requested. If two board sizes are possible, ask with clickable options before drawing the grid.

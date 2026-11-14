@@ -1,0 +1,10 @@
+---
+description: Never start a local server for this project
+alwaysApply: true
+---
+
+# No local server
+
+Never start a web server, preview server, or `python -m http.server` for this project. Do not serve the HTML files over localhost.
+
+Open and check `index.html` and `maya-battleship-game.html` as files. If a server is already running for this project, stop it.
