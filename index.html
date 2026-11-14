@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#061422">
+  <link rel="manifest" href="manifest.json">
+  <title>Battleship</title>
+  <style>
+    :root {
+      --sea: #061422;
+      --deep: #0b2740;
+      --foam: #d7eef8;
+      --brass: #d4a24c;
+      --brass-dim: #8c6a2f;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      min-height: 100%;
+      display: grid;
+      place-items: center;
+      color: var(--foam);
+      font-family: "Segoe UI", Georgia, serif;
+      background:
+        radial-gradient(ellipse at 50% 120%, rgba(36, 110, 150, 0.45), transparent 55%),
+        linear-gradient(180deg, #041018 0%, var(--sea) 45%, #082033 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(215, 238, 248, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(215, 238, 248, 0.05) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(circle at center, black 30%, transparent 75%);
+      pointer-events: none;
+    }
+
+    main {
+      position: relative;
+      text-align: center;
+      padding: 3rem 2.5rem;
+    }
+
+    .welcome-ship {
+      display: block;
+      width: min(720px, 92vw);
+      height: auto;
+      margin: 0 auto 1.4rem;
+    }
+
+    p.kicker {
+      letter-spacing: 0.42em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      color: var(--brass);
+      margin-bottom: 0.85rem;
+    }
+
+    .rule {
+      width: min(280px, 60vw);
+      height: 1px;
+      margin: 1.4rem auto 1.2rem;
+      background: linear-gradient(90deg, transparent, var(--brass-dim), transparent);
+    }
+
+    .tagline {
+      font-size: 1.05rem;
+      letter-spacing: 0.08em;
+      color: rgba(215, 238, 248, 0.78);
+    }
+
+    .new-game {
+      margin-top: 2rem;
+      padding: 0.85rem 1.8rem;
+      border: 1px solid var(--brass);
+      border-radius: 2px;
+      background: transparent;
+      color: var(--brass);
+      font: inherit;
+      font-size: 0.95rem;
+      letter-spacing: 0.22em;
+      text-indent: 0.22em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .new-game:hover,
+    .new-game:focus-visible,
+    .back:hover,
+    .back:focus-visible,
+    .start-game:hover,
+    .start-game:focus-visible {
+      background: rgba(212, 162, 76, 0.14);
+      outline: none;
+    }
+
+    .screen-actions {
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+    }
+
+    .back,
+    .start-game {
+      padding: 0.7rem 1.4rem;
+      border: 1px solid var(--brass);
+      border-radius: 2px;
+      background: transparent;
+      color: var(--brass);
+      font: inherit;
+      font-size: 0.85rem;
+      letter-spacing: 0.22em;
+      text-indent: 0.22em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #board-screen {
+      position: relative;
+      padding: 2rem 1.5rem;
+    }
+
+    #board-screen h2 {
+      font-weight: 500;
+      letter-spacing: 0.28em;
+      text-indent: 0.28em;
+      text-transform: uppercase;
+      font-size: 0.95rem;
+      color: var(--brass);
+      margin-bottom: 0.4rem;
+      text-align: center;
+    }
+
+    .place-note {
+      text-align: center;
+      font-size: 0.85rem;
+      color: rgba(215, 238, 248, 0.7);
+      margin-bottom: 1.25rem;
+    }
+
+    .place-layout {
+      display: flex;
+      align-items: flex-start;
+      gap: 1.75rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    #fleet {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+      min-width: 11rem;
+    }
+
+    .ship {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      padding: 0.45rem;
+      border: 1px solid rgba(212, 162, 76, 0.45);
+      cursor: grab;
+      background: rgba(6, 20, 34, 0.45);
+      touch-action: none;
+      user-select: none;
+    }
+
+    .ship.hidden {
+      display: none;
+    }
+
+    .ship span {
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .ship-preview {
+      height: 2.4rem;
+      display: grid;
+      place-items: center;
+    }
+
+    .ship img {
+      display: block;
+      width: 100%;
+      height: 2.4rem;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .ship.vertical .ship-preview {
+      height: 6rem;
+    }
+
+    .ship.vertical .ship-preview img {
+      width: 6rem;
+      height: 2.2rem;
+      transform: rotate(90deg);
+    }
+
+    .rotate {
+      align-self: flex-start;
+      padding: 0.28rem 0.5rem;
+      border: 1px solid var(--brass);
+      border-radius: 2px;
+      background: transparent;
+      color: var(--brass);
+      font: inherit;
+      font-size: 0.68rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .rotate:hover,
+    .rotate:focus-visible {
+      background: rgba(212, 162, 76, 0.14);
+      outline: none;
+    }
+
+    .grid {
+      position: relative;
+      z-index: 0;
+      display: grid;
+      grid-template-columns: 1.6rem repeat(10, minmax(1.7rem, 2.4rem));
+      grid-template-rows: 1.4rem repeat(10, minmax(1.7rem, 2.4rem));
+      gap: 3px;
+    }
+
+    .ship-picture {
+      position: absolute;
+      z-index: 1;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .ship-picture.hint-picture {
+      z-index: 2;
+    }
+
+    .cell.hint {
+      background: #3cba54;
+    }
+
+    .label {
+      display: grid;
+      place-items: center;
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+      color: rgba(215, 238, 248, 0.7);
+    }
+
+    #board-screen .cell {
+      touch-action: none;
+      user-select: none;
+    }
+
+    .cell {
+      border: 1px solid rgba(215, 238, 248, 0.28);
+      background: rgba(11, 48, 74, 0.72);
+    }
+
+    .cell.occupied {
+      cursor: grab;
+    }
+
+    .cell.hit,
+    .cell.miss,
+    .cell.sunk {
+      position: relative;
+      z-index: 3;
+    }
+
+    .drag-ghost {
+      position: absolute;
+      top: -1000px;
+      left: 0;
+      pointer-events: none;
+    }
+
+    .touch-ghost {
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 20;
+      pointer-events: none;
+    }
+
+    body.dragging-ship {
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    #game-screen {
+      position: relative;
+      padding: 2rem 1.5rem;
+    }
+
+    #game-screen h2,
+    .board h3 {
+      font-weight: 500;
+      letter-spacing: 0.28em;
+      text-indent: 0.28em;
+      text-transform: uppercase;
+      font-size: 0.95rem;
+      color: var(--brass);
+      text-align: center;
+    }
+
+    #game-screen h2 {
+      margin-bottom: 1.25rem;
+    }
+
+    .board h3 {
+      font-size: 0.78rem;
+      margin-bottom: 0.7rem;
+    }
+
+    .game-boards {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    #game-screen .cell.occupied {
+      cursor: default;
+    }
+
+    #computer-grid .cell {
+      cursor: pointer;
+    }
+
+    .cell.miss {
+      background: #8fd4f2;
+    }
+
+    .cell.hit {
+      background: #d64545;
+    }
+
+    .cell.sunk {
+      background: #111;
+    }
+
+    .popup {
+      position: fixed;
+      top: 0;
+      left: 0;
+      box-sizing: border-box;
+      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem;
+      background: rgba(4, 12, 20, 0.72);
+      z-index: 5;
+      overflow: hidden;
+    }
+
+    .popup.hidden {
+      display: none;
+    }
+
+    .popup-card {
+      position: relative;
+      z-index: 1;
+      box-sizing: border-box;
+      width: min(100%, 64rem);
+      max-height: 100%;
+      padding: clamp(0.75rem, 5vh, 4.75rem) clamp(0.75rem, 4vw, 6.5rem);
+      border: 1px solid var(--brass);
+      background: #061422;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .popup p {
+      margin: 0;
+      max-width: 100%;
+      color: var(--foam);
+      font-size: clamp(2rem, min(14vw, 16vh), 9.5rem);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      line-height: 0.95;
+    }
+
+    .popup p.won {
+      font-size: clamp(2.4rem, min(18vw, 22vh), 16rem);
+    }
+
+    .confetti {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .confetti i {
+      position: absolute;
+      top: -16px;
+      width: 10px;
+      height: 16px;
+      animation: confetti-fall 3s linear forwards;
+    }
+
+    @keyframes confetti-fall {
+      to {
+        transform: translateY(100vh) rotate(540deg);
+      }
+    }
+
+    .popup .back {
+      margin-top: clamp(0.75rem, 2vh, 2rem);
+      padding: 1rem 2.2rem;
+      font-size: 1.15rem;
+      flex-shrink: 0;
+    }
+
+    .test-toggle {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.45rem;
+      margin-top: 1.15rem;
+      color: rgba(215, 238, 248, 0.75);
+      font-size: 0.85rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .thinking {
+      width: min(280px, 70vw);
+      margin: 0.2rem auto 1rem;
+      text-align: center;
+    }
+
+    .thinking p {
+      margin-bottom: 0.4rem;
+      color: var(--foam);
+      font-size: 0.9rem;
+      letter-spacing: 0.08em;
+    }
+
+    .think-track {
+      height: 8px;
+      border: 1px solid rgba(215, 238, 248, 0.35);
+      background: rgba(6, 20, 34, 0.55);
+    }
+
+    .think-bar {
+      height: 100%;
+      width: 100%;
+      background: #8fd4f2;
+    }
+
+    .mute-toggle {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 6;
+      width: 2.75rem;
+      height: 2.75rem;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 1px solid var(--brass);
+      border-radius: 2px;
+      background: rgba(6, 20, 34, 0.82);
+      color: var(--brass);
+      cursor: pointer;
+    }
+
+    .mute-toggle:hover,
+    .mute-toggle:focus-visible {
+      background: rgba(212, 162, 76, 0.14);
+      outline: none;
+    }
+
+    .mute-toggle svg {
+      width: 1.35rem;
+      height: 1.35rem;
+    }
+
+    .mute-toggle .icon-muted {
+      display: none;
+    }
+
+    .mute-toggle.is-muted .icon-playing {
+      display: none;
+    }
+
+    .mute-toggle.is-muted .icon-muted {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <audio id="music" src="welcome-screen.mp3" autoplay muted loop></audio>
+  <button class="mute-toggle" id="mute-toggle" type="button" aria-label="Mute" aria-pressed="false">
+    <svg class="icon-playing" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor" d="M3 9v6h4l5 4V5L7 9H3z"/>
+      <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16.5 9.5a3.5 3.5 0 010 5"/>
+      <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M19 7a7 7 0 010 10"/>
+    </svg>
+    <svg class="icon-muted" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor" d="M3 9v6h4l5 4V5L7 9H3z"/>
+      <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16 10l5 5M21 10l-5 5"/>
+    </svg>
+  </button>
+  <main>
+    <img class="welcome-ship" src="cover.png" alt="Battleship">
+    <p class="kicker">Naval combat</p>
+    <div class="rule" aria-hidden="true"></div>
+    <p class="tagline">Welcome aboard.</p>
+    <button class="new-game" id="new-game" type="button">New Game</button>
+  </main>
+
+  <section id="board-screen" class="hidden" aria-label="Place your ships">
+    <h2>Place your ships</h2>
+    <p class="place-note">Drag a ship onto the grid. Drag it to a new square to move it, or back to the list to remove it. Use Rotate to turn a ship before you place it.</p>
+    <div class="place-layout">
+      <div class="grid" id="grid"></div>
+      <ul id="fleet"></ul>
+    </div>
+    <div class="screen-actions">
+      <button class="start-game" id="start-game" type="button">Start Game</button>
+      <button class="back" id="back" type="button">Back</button>
+    </div>
+  </section>
+
+  <section id="game-screen" class="hidden" aria-label="Game screen">
+    <h2>Game screen</h2>
+    <div id="thinking" class="thinking hidden">
+      <p>Thinking...</p>
+      <div class="think-track" aria-hidden="true">
+        <div id="think-bar" class="think-bar"></div>
+      </div>
+    </div>
+    <div class="game-boards">
+      <div class="board">
+        <h3>Computer</h3>
+        <div class="grid" id="computer-grid"></div>
+      </div>
+      <div class="board">
+        <h3>Player</h3>
+        <div class="grid" id="player-grid"></div>
+      </div>
+    </div>
+    <div id="result" class="popup hidden" role="dialog" aria-modal="true">
+      <div id="confetti" class="confetti" aria-hidden="true"></div>
+      <div class="popup-card">
+        <p id="result-text"></p>
+        <button class="back" id="result-back" type="button">Back</button>
+      </div>
+    </div>
+    <label class="test-toggle">
+      <input id="test-info" type="checkbox">
+      Test
+    </label>
+  </section>
+
+  <script>
+    const letters = "ABCDEFGHIJ".split("");
+    const ships = [
+      { id: "carrier", name: "Carrier", length: 5 },
+      { id: "battleship", name: "Battleship", length: 4 },
+      { id: "cruiser", name: "Cruiser", length: 3 },
+      { id: "submarine", name: "Submarine", length: 3 },
+      { id: "destroyer", name: "Destroyer", length: 2 }
+    ];
+    const placed = {};
+    const grid = document.getElementById("grid");
+    const fleet = document.getElementById("fleet");
+
+    function cellsFor(ship, row, col, vertical) {
+      return Array.from({ length: ship.length }, (_, index) => (
+        vertical ? { row: row + index, col } : { row, col: col + index }
+      ));
+    }
+
+    function spotCells(ship, spot) {
+      return cellsFor(ship, spot.row, spot.col, spot.vertical);
+    }
+
+    function shipById(id) {
+      return ships.find((ship) => ship.id === id);
+    }
+
+    function canPlace(ship, row, col, vertical) {
+      const upright = Boolean(vertical);
+      if (upright) {
+        if (row < 0 || col < 0 || col > 9 || row + ship.length > 10) {
+          return false;
+        }
+      } else if (row < 0 || row > 9 || col < 0 || col + ship.length > 10) {
+        return false;
+      }
+      const taken = new Set();
+      ships.forEach((other) => {
+        if (other.id === ship.id || !placed[other.id]) {
+          return;
+        }
+        spotCells(other, placed[other.id]).forEach((cell) => {
+          taken.add(cell.row + "," + cell.col);
+        });
+      });
+      return cellsFor(ship, row, col, upright).every((cell) => !taken.has(cell.row + "," + cell.col));
+    }
+
+    function paintGrid() {
+      grid.querySelectorAll(".cell").forEach((cell) => {
+        cell.classList.remove("occupied");
+        cell.draggable = false;
+        cell.removeAttribute("title");
+        cell.removeAttribute("role");
+        cell.setAttribute("aria-label", letters[Number(cell.dataset.col)] + (Number(cell.dataset.row) + 1));
+        delete cell.dataset.ship;
+        delete cell.dataset.part;
+      });
+      grid.querySelectorAll(".ship-picture").forEach((picture) => picture.remove());
+      ships.forEach((ship) => {
+        const spot = placed[ship.id];
+        if (!spot) {
+          return;
+        }
+        placeShipPicture(grid, ship, spot.row, spot.col, false, spot.vertical);
+        spotCells(ship, spot).forEach((spotCell, part) => {
+          const cell = grid.querySelector('[data-row="' + spotCell.row + '"][data-col="' + spotCell.col + '"]');
+          cell.classList.add("occupied");
+          cell.draggable = true;
+          cell.dataset.ship = ship.id;
+          cell.dataset.part = String(part);
+          cell.title = ship.name;
+          cell.setAttribute("role", "button");
+          cell.setAttribute("aria-label", ship.name + ", drag to move");
+        });
+      });
+      fleet.querySelectorAll(".ship").forEach((item) => {
+        item.classList.toggle("hidden", Boolean(placed[item.dataset.ship]));
+      });
+    }
+
+    let dragShip = null;
+    let dragPart = 0;
+    let dragVertical = false;
+
+    function placeShipPicture(board, ship, row, col, hint, vertical) {
+      const endRow = vertical ? row + ship.length - 1 : row;
+      const endCol = vertical ? col : col + ship.length - 1;
+      const start = board.querySelector('[data-row="' + row + '"][data-col="' + col + '"]');
+      const end = board.querySelector('[data-row="' + endRow + '"][data-col="' + endCol + '"]');
+      if (!start || !end) {
+        return;
+      }
+      const picture = document.createElement("img");
+      picture.className = hint ? "ship-picture hint-picture" : "ship-picture";
+      picture.src = ship.id + ".png";
+      picture.alt = "";
+      picture.draggable = false;
+      const boardRect = board.getBoundingClientRect();
+      const startRect = start.getBoundingClientRect();
+      const endRect = end.getBoundingClientRect();
+      if (vertical) {
+        const span = endRect.bottom - startRect.top;
+        const thick = endRect.right - startRect.left;
+        picture.style.width = span + "px";
+        picture.style.height = thick + "px";
+        picture.style.left = startRect.left - boardRect.left + thick / 2 - span / 2 + "px";
+        picture.style.top = startRect.top - boardRect.top + span / 2 - thick / 2 + "px";
+        picture.style.transform = "rotate(90deg)";
+      } else {
+        picture.style.left = startRect.left - boardRect.left + "px";
+        picture.style.top = startRect.top - boardRect.top + "px";
+        picture.style.width = endRect.right - startRect.left + "px";
+        picture.style.height = endRect.bottom - startRect.top + "px";
+      }
+      board.append(picture);
+    }
+
+    function clearHint() {
+      grid.querySelectorAll(".hint-picture").forEach((picture) => picture.remove());
+      grid.querySelectorAll(".cell.hint").forEach((cell) => cell.classList.remove("hint"));
+    }
+
+    function showHint(row, col) {
+      clearHint();
+      if (!dragShip) {
+        return;
+      }
+      const startRow = dragVertical ? row - dragPart : row;
+      const startCol = dragVertical ? col : col - dragPart;
+      if (!canPlace(dragShip, startRow, startCol, dragVertical)) {
+        return;
+      }
+      cellsFor(dragShip, startRow, startCol, dragVertical).forEach((spot) => {
+        const cell = grid.querySelector('[data-row="' + spot.row + '"][data-col="' + spot.col + '"]');
+        if (cell) {
+          cell.classList.add("hint");
+        }
+      });
+      placeShipPicture(grid, dragShip, startRow, startCol, true, dragVertical);
+    }
+
+    function shipCanvas(ship, vertical) {
+      const piece = 36;
+      const thick = 36;
+      const length = ship.length * piece;
+      const upright = Boolean(vertical);
+      const ghost = document.createElement("canvas");
+      ghost.width = upright ? thick : length;
+      ghost.height = upright ? length : thick;
+      const ctx = ghost.getContext("2d");
+      const img = fleet.querySelector('[data-ship="' + ship.id + '"] img');
+      if (img && img.complete && img.naturalWidth) {
+        if (upright) {
+          ctx.translate(thick, 0);
+          ctx.rotate(Math.PI / 2);
+          ctx.drawImage(img, 0, 0, length, thick);
+        } else {
+          ctx.drawImage(img, 0, 0, length, thick);
+        }
+      }
+      return ghost;
+    }
+
+    function startShipDrag(event, ship, part, vertical) {
+      dragShip = ship;
+      dragPart = part;
+      dragVertical = Boolean(vertical);
+      event.dataTransfer.setData("text/plain", ship.id + "|" + part + "|" + (dragVertical ? "v" : "h"));
+      event.dataTransfer.effectAllowed = "move";
+      const piece = 36;
+      const ghost = shipCanvas(ship, dragVertical);
+      ghost.className = "drag-ghost";
+      document.body.append(ghost);
+      const hotX = dragVertical ? 18 : part * piece + piece / 2;
+      const hotY = dragVertical ? part * piece + piece / 2 : 18;
+      event.dataTransfer.setDragImage(ghost, hotX, hotY);
+      window.setTimeout(() => ghost.remove(), 0);
+    }
+
+    let touchDrag = null;
+    let touchGhost = null;
+
+    function moveTouchGhost(x, y) {
+      if (!touchGhost) {
+        return;
+      }
+      const piece = 36;
+      const hotX = dragVertical ? 18 : dragPart * piece + piece / 2;
+      const hotY = dragVertical ? dragPart * piece + piece / 2 : 18;
+      touchGhost.style.transform = "translate(" + (x - hotX) + "px, " + (y - hotY) + "px)";
+    }
+
+    function endTouchDrag() {
+      if (touchGhost) {
+        touchGhost.remove();
+        touchGhost = null;
+      }
+      touchDrag = null;
+      dragShip = null;
+      document.body.classList.remove("dragging-ship");
+      clearHint();
+    }
+
+    function beginTouchDrag(event, ship, part, vertical) {
+      if (!ship || event.pointerType === "mouse") {
+        return;
+      }
+      event.preventDefault();
+      dragShip = ship;
+      dragPart = part;
+      dragVertical = Boolean(vertical);
+      touchDrag = { pointerId: event.pointerId, ship, part, vertical: dragVertical };
+      touchGhost = shipCanvas(ship, dragVertical);
+      touchGhost.className = "touch-ghost";
+      document.body.append(touchGhost);
+      document.body.classList.add("dragging-ship");
+      moveTouchGhost(event.clientX, event.clientY);
+    }
+
+    function cellFromPoint(x, y) {
+      const cells = grid.querySelectorAll(".cell");
+      for (let index = 0; index < cells.length; index += 1) {
+        const rect = cells[index].getBoundingClientRect();
+        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+          return cells[index];
+        }
+      }
+      return null;
+    }
+
+    function pointOnFleet(x, y) {
+      const rect = fleet.getBoundingClientRect();
+      return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+    }
+
+    document.addEventListener("pointermove", (event) => {
+      if (!touchDrag || event.pointerId !== touchDrag.pointerId) {
+        return;
+      }
+      event.preventDefault();
+      moveTouchGhost(event.clientX, event.clientY);
+      const gridCell = cellFromPoint(event.clientX, event.clientY);
+      if (gridCell) {
+        showHint(Number(gridCell.dataset.row), Number(gridCell.dataset.col));
+      } else {
+        clearHint();
+      }
+    }, { passive: false });
+
+    function finishTouchDrag(event) {
+      if (!touchDrag || event.pointerId !== touchDrag.pointerId) {
+        return;
+      }
+      const ship = touchDrag.ship;
+      const part = touchDrag.part;
+      const vertical = touchDrag.vertical;
+      const x = event.clientX;
+      const y = event.clientY;
+      endTouchDrag();
+      if (!ship) {
+        return;
+      }
+      if (pointOnFleet(x, y)) {
+        if (placed[ship.id]) {
+          delete placed[ship.id];
+          paintGrid();
+        }
+        return;
+      }
+      const gridCell = cellFromPoint(x, y);
+      if (!gridCell) {
+        return;
+      }
+      const targetRow = vertical ? Number(gridCell.dataset.row) - part : Number(gridCell.dataset.row);
+      const targetCol = vertical ? Number(gridCell.dataset.col) : Number(gridCell.dataset.col) - part;
+      if (canPlace(ship, targetRow, targetCol, vertical)) {
+        placed[ship.id] = { row: targetRow, col: targetCol, vertical };
+        ship.vertical = vertical;
+        paintGrid();
+      }
+    }
+
+    document.addEventListener("pointerup", finishTouchDrag);
+    document.addEventListener("pointercancel", (event) => {
+      if (!touchDrag || event.pointerId !== touchDrag.pointerId) {
+        return;
+      }
+      endTouchDrag();
+    });
+
+    function readDrag(dataTransfer) {
+      const raw = dataTransfer.getData("text/plain");
+      const [id, part, direction] = raw.split("|");
+      return { ship: shipById(id), part: Number(part) || 0, vertical: direction === "v" };
+    }
+
+    grid.append(document.createElement("span"));
+    letters.forEach((letter) => {
+      const label = document.createElement("span");
+      label.className = "label";
+      label.textContent = letter;
+      grid.append(label);
+    });
+
+    for (let row = 0; row < 10; row += 1) {
+      const label = document.createElement("span");
+      label.className = "label";
+      label.textContent = String(row + 1);
+      grid.append(label);
+      for (let col = 0; col < 10; col += 1) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.dataset.row = String(row);
+        cell.dataset.col = String(col);
+        cell.setAttribute("aria-label", letters[col] + (row + 1));
+        cell.addEventListener("pointerdown", (event) => {
+          if (!cell.dataset.ship) {
+            return;
+          }
+          beginTouchDrag(event, shipById(cell.dataset.ship), Number(cell.dataset.part) || 0, placed[cell.dataset.ship].vertical);
+        });
+        cell.addEventListener("dragstart", (event) => {
+          if (!cell.dataset.ship) {
+            event.preventDefault();
+            return;
+          }
+          startShipDrag(event, shipById(cell.dataset.ship), Number(cell.dataset.part) || 0, placed[cell.dataset.ship].vertical);
+        });
+        cell.addEventListener("dragover", (event) => {
+          event.preventDefault();
+          showHint(Number(cell.dataset.row), Number(cell.dataset.col));
+        });
+        cell.addEventListener("drop", (event) => {
+          event.preventDefault();
+          clearHint();
+          const { ship, part, vertical } = readDrag(event.dataTransfer);
+          const targetRow = vertical ? Number(cell.dataset.row) - part : Number(cell.dataset.row);
+          const targetCol = vertical ? Number(cell.dataset.col) : Number(cell.dataset.col) - part;
+          if (ship && canPlace(ship, targetRow, targetCol, vertical)) {
+            placed[ship.id] = { row: targetRow, col: targetCol, vertical };
+            ship.vertical = vertical;
+            paintGrid();
+          }
+        });
+        grid.append(cell);
+      }
+    }
+
+    ships.forEach((ship) => {
+      const item = document.createElement("li");
+      item.className = "ship";
+      item.dataset.ship = ship.id;
+      item.draggable = true;
+      item.addEventListener("pointerdown", (event) => {
+        if (event.target.closest(".rotate")) {
+          return;
+        }
+        beginTouchDrag(event, ship, 0, ship.vertical);
+      });
+      item.addEventListener("dragstart", (event) => {
+        startShipDrag(event, ship, 0, ship.vertical);
+      });
+      const name = document.createElement("span");
+      name.textContent = ship.name;
+      const preview = document.createElement("div");
+      preview.className = "ship-preview";
+      const picture = document.createElement("img");
+      picture.src = ship.id + ".png";
+      picture.alt = "";
+      picture.draggable = false;
+      preview.append(picture);
+      const rotate = document.createElement("button");
+      rotate.type = "button";
+      rotate.className = "rotate";
+      rotate.textContent = "Rotate";
+      rotate.draggable = false;
+      rotate.addEventListener("pointerdown", (event) => {
+        event.stopPropagation();
+        item.draggable = false;
+      });
+      rotate.addEventListener("pointerup", () => {
+        item.draggable = true;
+      });
+      rotate.addEventListener("pointerleave", () => {
+        item.draggable = true;
+      });
+      rotate.addEventListener("dragstart", (event) => event.preventDefault());
+      rotate.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        ship.vertical = !ship.vertical;
+        item.classList.toggle("vertical", Boolean(ship.vertical));
+      });
+      item.append(name, preview, rotate);
+      fleet.append(item);
+    });
+
+    fleet.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      clearHint();
+    });
+    document.addEventListener("dragend", () => {
+      dragShip = null;
+      clearHint();
+    });
+    fleet.addEventListener("drop", (event) => {
+      event.preventDefault();
+      const { ship } = readDrag(event.dataTransfer);
+      if (ship && placed[ship.id]) {
+        delete placed[ship.id];
+        paintGrid();
+      }
+    });
+
+    document.getElementById("new-game").addEventListener("click", () => {
+      ships.forEach((ship) => {
+        delete placed[ship.id];
+        ship.vertical = false;
+      });
+      fleet.querySelectorAll(".ship").forEach((item) => item.classList.remove("vertical"));
+      paintGrid();
+      document.querySelector("main").classList.add("hidden");
+      document.getElementById("board-screen").classList.remove("hidden");
+      playMusicFile("game-soundtrack2.mp3");
+    });
+
+    document.getElementById("back").addEventListener("click", () => {
+      clearShotTimer();
+      document.getElementById("board-screen").classList.add("hidden");
+      document.querySelector("main").classList.remove("hidden");
+      playMusicFile("welcome-screen.mp3");
+    });
+
+    document.getElementById("result-back").addEventListener("click", () => {
+      stopThinking();
+      clearShotTimer();
+      document.getElementById("result").classList.add("hidden");
+      clearConfetti();
+      document.getElementById("game-screen").classList.add("hidden");
+      document.querySelector("main").classList.remove("hidden");
+      playMusicFile("welcome-screen.mp3");
+    });
+
+    function buildGrid(target) {
+      target.append(document.createElement("span"));
+      letters.forEach((letter) => {
+        const label = document.createElement("span");
+        label.className = "label";
+        label.textContent = letter;
+        target.append(label);
+      });
+      for (let row = 0; row < 10; row += 1) {
+        const label = document.createElement("span");
+        label.className = "label";
+        label.textContent = String(row + 1);
+        target.append(label);
+        for (let col = 0; col < 10; col += 1) {
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          cell.dataset.row = String(row);
+          cell.dataset.col = String(col);
+          cell.setAttribute("aria-label", letters[col] + (row + 1));
+          target.append(cell);
+        }
+      }
+    }
+
+    const playerGrid = document.getElementById("player-grid");
+    const computerGrid = document.getElementById("computer-grid");
+    const computerPlaced = {};
+    buildGrid(computerGrid);
+    buildGrid(playerGrid);
+
+    function fits(layout, ship, row, col, vertical) {
+      if (vertical) {
+        if (row < 0 || col < 0 || col > 9 || row + ship.length > 10) {
+          return false;
+        }
+      } else if (row < 0 || row > 9 || col < 0 || col + ship.length > 10) {
+        return false;
+      }
+      const taken = new Set();
+      ships.forEach((other) => {
+        const spot = layout[other.id];
+        if (!spot) {
+          return;
+        }
+        spotCells(other, spot).forEach((cell) => {
+          taken.add(cell.row + "," + cell.col);
+        });
+      });
+      return cellsFor(ship, row, col, vertical).every((cell) => !taken.has(cell.row + "," + cell.col));
+    }
+
+    function placeComputerShips() {
+      Object.keys(computerPlaced).forEach((id) => {
+        delete computerPlaced[id];
+      });
+      for (let attempt = 0; attempt < 200; attempt += 1) {
+        const layout = {};
+        let placedAll = true;
+        ships.forEach((ship) => {
+          if (!placedAll) {
+            return;
+          }
+          const spots = [];
+          [false, true].forEach((vertical) => {
+            const lastRow = vertical ? 10 - ship.length : 9;
+            const lastCol = vertical ? 9 : 10 - ship.length;
+            for (let row = 0; row <= lastRow; row += 1) {
+              for (let col = 0; col <= lastCol; col += 1) {
+                if (fits(layout, ship, row, col, vertical)) {
+                  spots.push({ row, col, vertical });
+                }
+              }
+            }
+          });
+          if (spots.length === 0) {
+            placedAll = false;
+            return;
+          }
+          layout[ship.id] = spots[Math.floor(Math.random() * spots.length)];
+        });
+        if (placedAll) {
+          Object.assign(computerPlaced, layout);
+          return;
+        }
+      }
+    }
+
+    const computerShots = {};
+    const playerShots = {};
+
+    function shotKey(row, col) {
+      return row + "," + col;
+    }
+
+    function clearShots(shots) {
+      Object.keys(shots).forEach((key) => {
+        delete shots[key];
+      });
+    }
+
+    function hasShip(layout, row, col) {
+      return ships.some((ship) => {
+        const spot = layout[ship.id];
+        if (!spot) {
+          return false;
+        }
+        return spotCells(ship, spot).some((cell) => cell.row === row && cell.col === col);
+      });
+    }
+
+    function applyShots(grid, shots, layout) {
+      grid.querySelectorAll(".cell").forEach((cell) => {
+        cell.classList.remove("hit", "miss", "sunk");
+        const shot = shots[shotKey(Number(cell.dataset.row), Number(cell.dataset.col))];
+        if (shot) {
+          cell.classList.add(shot);
+        }
+      });
+      ships.forEach((ship) => {
+        const spot = layout[ship.id];
+        if (!spot) {
+          return;
+        }
+        const cells = spotCells(ship, spot);
+        const sunk = cells.every((spotCell) => shots[shotKey(spotCell.row, spotCell.col)] === "hit");
+        if (!sunk) {
+          return;
+        }
+        cells.forEach((spotCell) => {
+          const cell = grid.querySelector('[data-row="' + spotCell.row + '"][data-col="' + spotCell.col + '"]');
+          cell.classList.remove("hit");
+          cell.classList.add("sunk");
+        });
+      });
+    }
+
+    function paintPlayerGrid() {
+      playerGrid.querySelectorAll(".ship-picture").forEach((picture) => picture.remove());
+      playerGrid.querySelectorAll(".cell").forEach((cell) => {
+        cell.classList.remove("occupied");
+        cell.removeAttribute("title");
+      });
+      ships.forEach((ship) => {
+        const spot = placed[ship.id];
+        if (!spot) {
+          return;
+        }
+        placeShipPicture(playerGrid, ship, spot.row, spot.col, false, spot.vertical);
+        spotCells(ship, spot).forEach((spotCell) => {
+          const cell = playerGrid.querySelector('[data-row="' + spotCell.row + '"][data-col="' + spotCell.col + '"]');
+          cell.classList.add("occupied");
+          cell.title = ship.name;
+        });
+      });
+      applyShots(playerGrid, playerShots, placed);
+    }
+
+    function paintComputerGrid() {
+      const show = document.getElementById("test-info").checked;
+      computerGrid.querySelectorAll(".ship-picture").forEach((picture) => picture.remove());
+      computerGrid.querySelectorAll(".cell").forEach((cell) => {
+        cell.classList.remove("occupied");
+        cell.removeAttribute("title");
+      });
+      if (show) {
+        ships.forEach((ship) => {
+          const spot = computerPlaced[ship.id];
+          if (!spot) {
+            return;
+          }
+          placeShipPicture(computerGrid, ship, spot.row, spot.col, false, spot.vertical);
+          spotCells(ship, spot).forEach((spotCell) => {
+            const cell = computerGrid.querySelector('[data-row="' + spotCell.row + '"][data-col="' + spotCell.col + '"]');
+            cell.classList.add("occupied");
+            cell.title = ship.name;
+          });
+        });
+      }
+      applyShots(computerGrid, computerShots, computerPlaced);
+    }
+
+    let gameOver = false;
+    let computerThinking = false;
+    let waitingForShot = false;
+    let shotTimer = null;
+
+    const music = document.getElementById("music");
+    const muteToggle = document.getElementById("mute-toggle");
+    let musicMuted = false;
+    music.loop = true;
+    music.volume = 1;
+    music.muted = true;
+    music.addEventListener("playing", () => {
+      if (!musicMuted) {
+        music.muted = false;
+      }
+    });
+    if (music.paused) {
+      const started = music.play();
+      if (started) {
+        started.catch(() => {});
+      }
+    }
+    document.addEventListener("pointerdown", () => {
+      if (musicMuted || !music.paused) {
+        return;
+      }
+      music.volume = 1;
+      music.muted = false;
+      const started = music.play();
+      if (started) {
+        started.catch(() => {});
+      }
+    });
+    const splashAudio = new Audio("01_water_splash.wav");
+    const hitAudio = new Audio("02_ship_hit_explosion.wav");
+    const cannonAudio = new Audio("04_cannon_fire.wav");
+    let musicRequest = 0;
+
+    function applyMute() {
+      music.muted = musicMuted;
+      splashAudio.muted = musicMuted;
+      hitAudio.muted = musicMuted;
+      cannonAudio.muted = musicMuted;
+      muteToggle.classList.toggle("is-muted", musicMuted);
+      muteToggle.setAttribute("aria-pressed", String(musicMuted));
+      muteToggle.setAttribute("aria-label", musicMuted ? "Unmute" : "Mute");
+    }
+
+    function playMusicFile(src) {
+      const request = musicRequest + 1;
+      musicRequest = request;
+      const next = new URL(src, document.baseURI).href;
+      const begin = () => {
+        if (request !== musicRequest) {
+          return;
+        }
+        music.volume = 1;
+        music.muted = musicMuted;
+        if (musicMuted) {
+          return;
+        }
+        const played = music.play();
+        if (played) {
+          played.catch(() => {});
+        }
+      };
+      if (music.src !== next) {
+        music.pause();
+        music.src = src;
+        music.load();
+        music.addEventListener("canplay", function onReady() {
+          music.removeEventListener("canplay", onReady);
+          begin();
+        });
+        return;
+      }
+      begin();
+    }
+
+    function playEffect(audio) {
+      if (musicMuted) {
+        return;
+      }
+      audio.currentTime = 0;
+      const played = audio.play();
+      if (played) {
+        played.catch(() => {});
+      }
+    }
+
+    muteToggle.addEventListener("click", () => {
+      musicMuted = !musicMuted;
+      applyMute();
+      if (!musicMuted) {
+        const played = music.play();
+        if (played) {
+          played.catch(() => {});
+        }
+      }
+    });
+
+
+    function clearShotTimer() {
+      if (shotTimer) {
+        clearTimeout(shotTimer);
+        shotTimer = null;
+      }
+      waitingForShot = false;
+    }
+
+    function afterSelection(applyResult, onDone) {
+      waitingForShot = true;
+      playEffect(cannonAudio);
+      shotTimer = setTimeout(() => {
+        shotTimer = null;
+        waitingForShot = false;
+        playEffect(applyResult() === "hit" ? hitAudio : splashAudio);
+        if (onDone) {
+          onDone();
+        }
+      }, 1000);
+    }
+
+    function allSunk(layout, shots) {
+      const fleet = ships.filter((ship) => layout[ship.id]);
+      if (fleet.length === 0) {
+        return false;
+      }
+      return fleet.every((ship) => {
+        const spot = layout[ship.id];
+        return spotCells(ship, spot).every((cell) => shots[shotKey(cell.row, cell.col)] === "hit");
+      });
+    }
+
+    function clearConfetti() {
+      document.getElementById("confetti").replaceChildren();
+    }
+
+    function showConfetti() {
+      const layer = document.getElementById("confetti");
+      const colors = ["#d4a24c", "#d7eef8", "#c49aee", "#8fd4f2", "#d64545"];
+      clearConfetti();
+      for (let index = 0; index < 90; index += 1) {
+        const piece = document.createElement("i");
+        piece.style.left = Math.random() * 100 + "%";
+        piece.style.background = colors[index % colors.length];
+        piece.style.animationDelay = Math.random() * 0.7 + "s";
+        layer.append(piece);
+      }
+    }
+
+    function showResult(text) {
+      gameOver = true;
+      const message = document.getElementById("result-text");
+      message.textContent = text;
+      message.classList.toggle("won", text === "You Won!");
+      if (text === "You Won!") {
+        showConfetti();
+      } else {
+        clearConfetti();
+      }
+      document.getElementById("result").classList.remove("hidden");
+    }
+    let thinkTimer = null;
+    let thinkFrame = null;
+
+    function stopThinking() {
+      computerThinking = false;
+      if (thinkTimer) {
+        clearTimeout(thinkTimer);
+        thinkTimer = null;
+      }
+      if (thinkFrame) {
+        cancelAnimationFrame(thinkFrame);
+        thinkFrame = null;
+      }
+      document.getElementById("thinking").classList.add("hidden");
+    }
+
+    function beginComputerTurn() {
+      computerThinking = true;
+      const panel = document.getElementById("thinking");
+      const bar = document.getElementById("think-bar");
+      panel.classList.remove("hidden");
+      bar.style.width = "100%";
+      const started = performance.now();
+      const duration = 2000;
+      function tick(now) {
+        const left = Math.max(0, duration - (now - started));
+        bar.style.width = (left / duration) * 100 + "%";
+        if (left > 0) {
+          thinkFrame = requestAnimationFrame(tick);
+        }
+      }
+      thinkFrame = requestAnimationFrame(tick);
+      thinkTimer = setTimeout(() => {
+        stopThinking();
+        computerTurn();
+      }, duration);
+    }
+
+    function computerTurn() {
+      const open = [];
+      for (let row = 0; row < 10; row += 1) {
+        for (let col = 0; col < 10; col += 1) {
+          if (!playerShots[shotKey(row, col)]) {
+            open.push({ row, col });
+          }
+        }
+      }
+      if (open.length === 0) {
+        return;
+      }
+      const pick = open[Math.floor(Math.random() * open.length)];
+      const key = shotKey(pick.row, pick.col);
+      afterSelection(() => {
+        const result = hasShip(placed, pick.row, pick.col) ? "hit" : "miss";
+        playerShots[key] = result;
+        paintPlayerGrid();
+        return result;
+      }, () => {
+        if (allSunk(placed, playerShots)) {
+          showResult("You Lost!");
+        }
+      });
+    }
+
+    document.getElementById("test-info").addEventListener("change", paintComputerGrid);
+
+    computerGrid.querySelectorAll(".cell").forEach((cell) => {
+      cell.addEventListener("click", () => {
+        const row = Number(cell.dataset.row);
+        const col = Number(cell.dataset.col);
+        const key = shotKey(row, col);
+        if (gameOver || computerThinking || waitingForShot || computerShots[key]) {
+          return;
+        }
+        afterSelection(() => {
+          const result = hasShip(computerPlaced, row, col) ? "hit" : "miss";
+          computerShots[key] = result;
+          paintComputerGrid();
+          return result;
+        }, () => {
+          if (allSunk(computerPlaced, computerShots)) {
+            showResult("You Won!");
+            return;
+          }
+          if (document.getElementById("test-info").checked) {
+            computerTurn();
+            return;
+          }
+          beginComputerTurn();
+        });
+      });
+    });
+
+    document.getElementById("start-game").addEventListener("click", () => {
+      stopThinking();
+      clearShotTimer();
+      gameOver = false;
+      document.getElementById("result").classList.add("hidden");
+      clearConfetti();
+      placeComputerShips();
+      clearShots(computerShots);
+      clearShots(playerShots);
+      document.getElementById("board-screen").classList.add("hidden");
+      document.getElementById("game-screen").classList.remove("hidden");
+      paintPlayerGrid();
+      paintComputerGrid();
+      playMusicFile("game-soundtrack2.mp3");
+    });
+
+    window.addEventListener("resize", () => {
+      if (!document.getElementById("board-screen").classList.contains("hidden")) {
+        paintGrid();
+      }
+      if (!document.getElementById("game-screen").classList.contains("hidden")) {
+        paintPlayerGrid();
+        paintComputerGrid();
+      }
+    });
+
+    if ("serviceWorker" in navigator && location.protocol !== "file:") {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>
